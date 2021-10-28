@@ -54,6 +54,7 @@ for(i in 1:nrow(All.flows)){
     All.flows[i, "Topped.days"] <- 0 }
 }
 
+# jessica's addition to fix the tails
 for(i in 2:nrow(All.flows)){
   if(All.flows[i, "YOLO"] >= 4000 & All.flows[i-1, "Topped.days"] > 0){
   All.flows[i, "Topped.days"] <- All.flows[i-1, "Topped.days"]+1}
@@ -74,27 +75,35 @@ plot(All.flows$Date, All.flows$Topped.days)
 # max inundation days per year
 inundation.summary<- aggregate(All.flows['Topped.days'], by=All.flows['Year'], max)
 # need to add total inundation days per year
-
+# flooding? yes (1), no (0)
+# if value, then 1, use sum with code above
 
 # max of QYOLO (flood peak) by year
 #flood.peak<- aggregate(All.flows['YOLO'], by=All.flows['Year'], max)
 
-# date of and flood peak (max of QYOLO) by year
+# date of and flood peak value (max of QYOLO) by year
 flood.timing <- All.flows %>%
   group_by(Year) %>%
   filter(YOLO == max(YOLO)) %>%
   distinct(YOLO,.keep_all = T) %>%
   ungroup()
 
+write.csv(flood.timing, "flood_peak_by_year.csv")
+
 # FRE overtopping events
 overtopping <- subset(Discharge.Sac, Height.Sac >= 33.5)
 overtopping$Year <- format(overtopping$Date, format = "%Y")
 
 # first and last overtopping
-dates %>%
+topping.timing <- overtopping %>%
+  group_by(Year) %>% #year is not working, need water year
+  summarise(min = min(Date),
+            max = max(Date))
+
+overtopping %>%
   # find min and max
-  summarise(min = min(loco),
-            max = max(loco))
+  summarise(min = min(Date),
+            max = max(Date))
 # number of days of overtopping
 ddply(DF, .(months), summarise,
       reached =
