@@ -70,7 +70,7 @@ write.csv(All.flows, "inundation_days.csv")
 
 # add year
 #All.flows[, "Year"] <- format(All.flows[,"Date"], "%Y")
-unique(All.flows$Year)
+unique(All.flows$WY)
 # need to switch to water year
 All.flows <- add_WYD(All.flows,"Date")
 
@@ -89,7 +89,7 @@ inundation.total<- aggregate(All.flows['inundation'], by=All.flows['WY'], sum)
 
 # date of and flood peak value (max of QYOLO) by year
 flood.timing <- All.flows %>%
-  group_by(Year) %>%
+  group_by(WY) %>%
   filter(YOLO == max(YOLO)) %>%
   distinct(YOLO,.keep_all = T) %>%
   ungroup()
@@ -99,10 +99,12 @@ write.csv(flood.timing, "flood_peak_by_year.csv")
 # FRE overtopping events
 overtopping <- subset(Discharge.Sac, Height.Sac >= 33.5)
 overtopping$Year <- format(overtopping$Date, format = "%Y")
+overtopping <- add_WYD(overtopping,"Date")
+head(overtopping)
 
 # first and last overtopping
 topping.timing <- overtopping %>%
-  group_by(Year) %>% #year is not working, need water year
+  group_by(WY) %>% #year is not working, need water year
   summarise(min = min(Date),
             max = max(Date))
 
