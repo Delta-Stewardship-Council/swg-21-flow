@@ -136,3 +136,17 @@ All.summarised <- merge(inundation_summarised, flood.timing, by = "WY")
 All.summarised <- All.summarised[,c(1:8)]
 
 # number of overtopping events
+#All.flows$over_Sac <- ifelse(All.flows$Height.Sac > 33.5, 1, 0)
+# find gaps in dates
+head(overtopping)
+#All.flows[!All.flows$Date %in% overtopping$Date]
+# consecutive dates T/F
+overtopping$consecutive <- c(NA,diff(as.Date(overtopping$Date))==1)
+num_events <-
+  overtopping %>%
+  filter(consecutive == FALSE) %>%
+  group_by(WY) %>%
+  summarise(number_of_events = n())
+
+All.summarised <- merge(All.summarised, num_events, by = "WY", all.x = TRUE)
+write.csv(All.summarised, "All.summarised.csv")
