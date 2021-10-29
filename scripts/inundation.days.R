@@ -108,14 +108,31 @@ topping.timing <- overtopping %>%
   summarise(min = min(Date),
             max = max(Date))
 
-overtopping %>%
-  # find min and max
-  summarise(min = min(Date),
-            max = max(Date))
-# number of days of overtopping
-ddply(DF, .(months), summarise,
-      reached =
-        if (any(cumsum(Rainfall)>= thresh)) {
-          which.max(
-            cumsum(Rainfall) >= thresh)
-        } else NA)
+topping_summarised <-
+  All.flows %>%
+  filter(Height.Sac > 33.5) %>%
+  group_by(WY) %>%
+  summarise(number_of_days = n(), # count number of rows in each group
+            first_date = min(Date),
+            last_date = max(Date))
+
+# need to add last day of flooding
+inundation_summarised <-
+  All.flows %>%
+  filter(inundation > 0) %>%
+  group_by(WY) %>%
+  summarise(number_of_days = n(), # count number of rows in each group
+            first_date = min(Date),
+            last_date = max(Date))
+
+# put the summaries together
+# make column names more translatable
+head(inundation_summarised)
+colnames(inundation_summarised) <- c("WY", "number_of_days_inund", "first_date_inund", "last_date_inund")
+head(flood.timing)
+colnames(flood.timing)[1:4] <- c("Date_peak", "YOLO_peak", "Height.Sac_peak", "Topped.days_peak")
+
+All.summarised <- merge(inundation_summarised, flood.timing, by = "WY")
+All.summarised <- All.summarised[,c(1:8)]
+
+# number of overtopping events
