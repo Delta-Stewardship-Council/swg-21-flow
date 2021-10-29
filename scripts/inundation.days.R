@@ -2,6 +2,8 @@
 library(dplyr)
 library(readr)
 library(data.table)
+library(devtools)
+devtools::install_github("ryanpeek/wateRshedTools")
 
 ### flow data
 #sac <- read.csv("data/FRE_1.csv")
@@ -67,8 +69,10 @@ head(All.flows)
 write.csv(All.flows, "inundation_days.csv")
 
 # add year
-All.flows[, "Year"] <- format(All.flows[,"Date"], "%Y")
+#All.flows[, "Year"] <- format(All.flows[,"Date"], "%Y")
 unique(All.flows$Year)
+# need to switch to water year
+All.flows <- add_WYD(All.flows,"Date")
 
 plot(All.flows$Date, All.flows$Topped.days)
 
