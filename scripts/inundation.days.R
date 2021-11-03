@@ -4,6 +4,7 @@ library(readr)
 library(data.table)
 library(devtools)
 devtools::install_github("ryanpeek/wateRshedTools")
+library(wateRshedTools)
 
 ### flow data
 #sac <- read.csv("data/FRE_1.csv")
@@ -50,38 +51,40 @@ plot(All.flows$Height.Sac, All.flows$YOLO)
 
 for(i in 1:nrow(All.flows)){
   if(All.flows[i,"Height.Sac"] < 33.5){
-    All.flows[i,"Topped.days"] <- 0}
+    All.flows[i,"Inund.days"] <- 0}
   else if(All.flows[i, "Height.Sac"] >= 33.5){
-    All.flows[i, "Topped.days"] <- All.flows[i-1, "Topped.days"]+1}
+    All.flows[i, "Inund.days"] <- All.flows[i-1, "Inund.days"]+1}
     else {
-    All.flows[i, "Topped.days"] <- 0 }
+    All.flows[i, "Inund.days"] <- 0 }
 }
 
 # jessica's addition to fix the tails
 for(i in 2:nrow(All.flows)){
-  if(All.flows[i, "YOLO"] >= 4000 & All.flows[i-1, "Topped.days"] > 0){
-  All.flows[i, "Topped.days"] <- All.flows[i-1, "Topped.days"]+1}
+  if(All.flows[i, "YOLO"] >= 4000 & All.flows[i-1, "Inund.days"] > 0){
+  All.flows[i, "Inund.days"] <- All.flows[i-1, "Inund.days"]+1}
 }
 
-max(All.flows$Topped.days) #91
-All.flows.check <- subset(All.flows, Topped.days > 0)
+max(All.flows$Inund.days) #91
+All.flows.check <- subset(All.flows, Inund.days > 0)
 
 head(All.flows)
-write.csv(All.flows, "inundation_days.csv")
 
 # add year
 #All.flows[, "Year"] <- format(All.flows[,"Date"], "%Y")
-unique(All.flows$WY)
 # need to switch to water year
 All.flows <- add_WYD(All.flows,"Date")
-
+unique(All.flows$WY)
 plot(All.flows$Date, All.flows$Topped.days)
 
 # max inundation days per year
 inundation.max<- aggregate(All.flows['Topped.days'], by=All.flows['WY'], max)
 # need to add total inundation days per year
 # flooding? yes (1), no (0)
-All.flows$inundation <- ifelse(All.flows$Topped.days > 0, 1, 0)
+All.flows$inundation <- ifelse(All.flows$Inund.days > 0, 1, 0)
+head(All.flows)
+
+write.csv(All.flows, "inundation_days.csv")
+
 # if value, then 1, use sum with code above
 inundation.total<- aggregate(All.flows['inundation'], by=All.flows['WY'], sum)
 
