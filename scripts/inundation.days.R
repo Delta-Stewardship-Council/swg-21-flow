@@ -44,6 +44,7 @@ min(All.flows$Date) #1996-10-01
 max(All.flows$Date) #2020-09-30
 
 plot(All.flows$Date, All.flows$Height.Sac)
+plot(All.flows$Height.Sac, All.flows$YOLO)
 
 # definition for inundation days
 
@@ -150,3 +151,27 @@ num_events <-
 
 All.summarised <- merge(All.summarised, num_events, by = "WY", all.x = TRUE)
 write.csv(All.summarised, "All.summarised.csv")
+
+# look at daymet
+# Yolo
+lats <- 38.307857513
+lons <- -121.692428589
+
+library(daymetr)
+yolo_daymet <- download_daymet(site = "Yolo",
+                               lat = lats,
+                               lon =  lons,
+                               start = 1997,
+                               end = 2020, internal = TRUE)
+
+
+# rename variables, create a date column
+yolo_daymet_df <- yolo_daymet$data %>%
+  transmute(date = ymd(paste0(year, '01-01'))+ days(yday) -1,
+            precip_mm = prcp..mm.day., # mm ppt / day
+            tmax = tmax..deg.c., #max temp
+            tmin = tmin..deg.c., # min temp
+            tmean = (tmax + tmin) / 2, # mean temp
+            trange = tmax - tmin, # temp range
+            srad = srad..W.m.2., # soloar radiation
+            vpd = vp..Pa.)
