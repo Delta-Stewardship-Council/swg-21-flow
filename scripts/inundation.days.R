@@ -77,7 +77,8 @@ unique(All.flows$WY)
 plot(All.flows$Date, All.flows$Topped.days)
 
 # max inundation days per year
-inundation.max<- aggregate(All.flows['Topped.days'], by=All.flows['WY'], max)
+inundation.max<- aggregate(All.flows['Inund.days'], by=All.flows['WY'], max)
+
 # need to add total inundation days per year
 # flooding? yes (1), no (0)
 All.flows$inundation <- ifelse(All.flows$Inund.days > 0, 1, 0)
