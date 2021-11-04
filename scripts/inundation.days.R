@@ -69,6 +69,13 @@ All.flows.check <- subset(All.flows, Inund.days > 0)
 
 head(All.flows)
 
+# need to add total inundation days per year
+# flooding? yes (1), no (0)
+All.flows$inundation <- ifelse(All.flows$Inund.days > 0, 1, 0)
+head(All.flows)
+
+write.csv(All.flows, "data/inundation_days.csv", row.names = FALSE)
+
 # add year
 #All.flows[, "Year"] <- format(All.flows[,"Date"], "%Y")
 # need to switch to water year
@@ -78,13 +85,6 @@ plot(All.flows$Date, All.flows$Topped.days)
 
 # max inundation days per year
 inundation.max<- aggregate(All.flows['Inund.days'], by=All.flows['WY'], max)
-
-# need to add total inundation days per year
-# flooding? yes (1), no (0)
-All.flows$inundation <- ifelse(All.flows$Inund.days > 0, 1, 0)
-head(All.flows)
-
-write.csv(All.flows, "inundation_days.csv")
 
 # if value, then 1, use sum with code above
 inundation.total<- aggregate(All.flows['inundation'], by=All.flows['WY'], sum)
