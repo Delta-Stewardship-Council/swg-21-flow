@@ -2,6 +2,7 @@
 library(dplyr)
 library(readr)
 library(data.table)
+library(lubridate)
 library(devtools)
 #devtools::install_github("ryanpeek/wateRshedTools")
 library(wateRshedTools)
@@ -18,29 +19,47 @@ library(wateRshedTools)
 # this FRE data has QC
 fre.qc <- read_csv("data/WDL_FRE_A02170_Stage_Raw.zip", skip = 2)
 head(fre.qc)
-fre.qc$Date <- as.Date(fre.qc$Date, "%m/%d/%Y")
+
+# fix datetimes and dates
+fre.qc$Datetime <- mdy_hms(fre.qc$Date)
+fre.qc$date <- as.Date(fre.qc$Datetime)
+summary(fre.qc)
 str(fre.qc)
 # explore quality codes
 unique(fre.qc$Qual)
+table(fre.qc$Qual)
 unique(fre.qc$...4)
 sum(is.na(fre.qc$Point))#43437
 
-fre.qc.na<- na.omit(fre.qc[,c(1,2)]) # just remove NA value for now
+# this drops the days we may need later.
+# fre.qc.na<- na.omit(fre.qc[,c(1,2)]) # just remove NA value for now
 
 # this is hourly data, so need to calc max per day
 Discharge.Sac <-
-  fre.qc.na %>%
-  group_by(Date) %>%
-  summarise(Height.Sac = max(Point))
+  fre.qc %>%
+  group_by(date) %>%
+  summarise(Height.Sac = max(Point, na.rm = TRUE)) %>%
+  ungroup()
+
+# to deal with no/Inf data, for now just inserting stage of 10, resulting in zero flow days later, almost all dates from late summer/fall and at low flows...
+Discharge.Sac <- Discharge.Sac %>%
+  mutate(Height.Sac = ifelse(is.infinite(Height.Sac), 10, Height.Sac),
+         Height.Sac = ifelse(is.na(Height.Sac), 10, Height.Sac))
+summary(Discharge.Sac)
 
 dayflow <- read_csv("data/dayflow-results-1997-2020.csv")
 head(dayflow)
-dayflow$Date <- as.Date(dayflow$Date)
-str(dayflow)
+dayflow$Date <- ymd(dayflow$Date)
+summary(dayflow)
 plot(dayflow$Date, dayflow$YOLO)
 
-All.flows <- merge(dayflow[,c(3,5)], Discharge.Sac, by = "Date")
-head(All.flows)
+All.flows <- left_join(dayflow[,c(3,5)], Discharge.Sac, by =c("Date"="date"))
+
+# as before, make NAs 10 for now
+All.flows <- All.flows %>%
+  mutate(Height.Sac = ifelse(is.na(Height.Sac), 10, Height.Sac))
+
+summary(All.flows)
 min(All.flows$Date) #1996-10-01
 max(All.flows$Date) #2020-09-30
 
@@ -48,7 +67,6 @@ plot(All.flows$Date, All.flows$Height.Sac)
 plot(All.flows$Height.Sac, All.flows$YOLO)
 
 # definition for inundation days
-
 for(i in 1:nrow(All.flows)){
   if(All.flows[i,"Height.Sac"] < 33.5){
     All.flows[i,"Inund.days"] <- 0}
@@ -74,13 +92,7 @@ head(All.flows)
 All.flows$inundation <- ifelse(All.flows$Inund.days > 0, 1, 0)
 head(All.flows)
 
-# something is happening hear where data is missing in the inundation dataset (but not from dayflow). There are about 311 missing records scattered across multiple years. Not sure why.
-# make a tst dayflow dataset to join
-tst_dayflow <- dayflow %>% select(Year:YOLO) %>% mutate(date=lubridate::ymd(Date))
-tst_dayflow_join<-left_join(tst_dayflow, All.flows, by="Date")
-summary(tst_dayflow_join)
-# View and look at Yolo.y column, if you sort on that column, all NAs at bottom
-View(tst_dayflow_join)
+# 311 records with Stage of 10 are the "filled" records
 
 write.csv(All.flows, "data/inundation_days.csv", row.names = FALSE)
 
