@@ -93,15 +93,18 @@ All.flows$inundation <- ifelse(All.flows$Inund.days > 0, 1, 0)
 head(All.flows)
 
 # 311 records with Stage of 10 are the "filled" records
+# fix names
+library(janitor)
+all_flows <- All.flows %>% clean_names()
 
-write.csv(All.flows, "data/inundation_days.csv", row.names = FALSE)
+write.csv(all_flows, "data/inundation_days.csv", row.names = FALSE)
 
 # add year
 #All.flows[, "Year"] <- format(All.flows[,"Date"], "%Y")
 # need to switch to water year
 All.flows <- add_WYD(All.flows,"Date")
 unique(All.flows$WY)
-plot(All.flows$Date, All.flows$Topped.days)
+plot(All.flows$Date, All.flows$Inund.days)
 
 # max inundation days per year
 inundation.max<- aggregate(All.flows['Inund.days'], by=All.flows['WY'], max)
@@ -123,15 +126,15 @@ write.csv(flood.timing, "flood_peak_by_year.csv")
 
 # FRE overtopping events
 overtopping <- subset(Discharge.Sac, Height.Sac >= 33.5)
-overtopping$Year <- format(overtopping$Date, format = "%Y")
-overtopping <- add_WYD(overtopping,"Date")
+overtopping$Year <- format(overtopping$date, format = "%Y")
+overtopping <- add_WYD(overtopping,"date")
 head(overtopping)
 
 # first and last overtopping
 topping.timing <- overtopping %>%
   group_by(WY) %>% #year is not working, need water year
-  summarise(min = min(Date),
-            max = max(Date))
+  summarise(min = min(date),
+            max = max(date))
 
 topping_summarised <-
   All.flows %>%
@@ -166,7 +169,7 @@ All.summarised <- All.summarised[,c(1:8)]
 head(overtopping)
 #All.flows[!All.flows$Date %in% overtopping$Date]
 # consecutive dates T/F
-overtopping$consecutive <- c(NA,diff(as.Date(overtopping$Date))==1)
+overtopping$consecutive <- c(NA,diff(as.Date(overtopping$date))==1)
 num_events <-
   overtopping %>%
   filter(consecutive == FALSE) %>%
@@ -174,7 +177,7 @@ num_events <-
   summarise(number_of_events = n())
 
 All.summarised <- merge(All.summarised, num_events, by = "WY", all.x = TRUE)
-write.csv(All.summarised, "All.summarised.csv")
+write.csv(All.summarised, "data/All_summarised.csv")
 
 # plots
 plot(All.flows$Date, All.flows$Inund.days, col = "red")
@@ -183,7 +186,7 @@ plot(All.flows$Date, All.flows$YOLO, col = "blue")
 par(new = TRUE)
 plot(All.flows$Date, All.flows$Height.Sac, col = "green")
 
-install_github('htmlwidgets/sparkline')
+#install_github('htmlwidgets/sparkline')
 library(htmlwidgets)
 library(sparkline)
 
