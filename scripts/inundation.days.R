@@ -3,7 +3,7 @@ library(dplyr)
 library(readr)
 library(data.table)
 library(devtools)
-devtools::install_github("ryanpeek/wateRshedTools")
+#devtools::install_github("ryanpeek/wateRshedTools")
 library(wateRshedTools)
 
 ### flow data
@@ -73,6 +73,14 @@ head(All.flows)
 # flooding? yes (1), no (0)
 All.flows$inundation <- ifelse(All.flows$Inund.days > 0, 1, 0)
 head(All.flows)
+
+# something is happening hear where data is missing in the inundation dataset (but not from dayflow). There are about 311 missing records scattered across multiple years. Not sure why.
+# make a tst dayflow dataset to join
+tst_dayflow <- dayflow %>% select(Year:YOLO) %>% mutate(date=lubridate::ymd(Date))
+tst_dayflow_join<-left_join(tst_dayflow, All.flows, by="Date")
+summary(tst_dayflow_join)
+# View and look at Yolo.y column, if you sort on that column, all NAs at bottom
+View(tst_dayflow_join)
 
 write.csv(All.flows, "data/inundation_days.csv", row.names = FALSE)
 
